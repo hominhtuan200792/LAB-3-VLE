@@ -1,0 +1,8 @@
+#1: Hình chữ nhật, 2: Hình tròn; các thông số cách nhau bởi tab
+1	5.3	3.2
+2	9.1
+1	11	2
+1	12.9	10
+2	4.5
+2	3.4
+1	77	55
