@@ -2,152 +2,221 @@
 using System.Globalization;
 using System.Text;
 
-class DaThuc
+enum ViTriHaiDuongTron { TrungNhau, ChuaNhau, TiepXucTrong, CatNhau, TiepXucNgoai, NgoaiNhau }
+
+enum ViTriDiemDuongTron { BenTrong, TrenDuongTron, BenNgoai }
+
+class Diem
 {
-    private double[] heSo;     
-    public DaThuc(int bac)
+    public double X { get; set; }
+    public double Y { get; set; }
+
+    public Diem() { X = 0; Y = 0; }
+    public Diem(double x, double y) { X = x; Y = y; }
+
+    public double KhoangCach(Diem p)
     {
-        if (bac < 0)
-            throw new ArgumentException("Bậc của đa thức phải >= 0.");
-        heSo = new double[bac + 1];      
+        double dx = X - p.X;
+        double dy = Y - p.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
     }
 
-    public int Bac
+    public void Nhap()
     {
-        get { return heSo.Length - 1; }
-    }
-
-    public double this[int k]
-    {
-        get
-        {
-            KiemTraChiSo(k);
-            return heSo[k];
-        }
-        set
-        {
-            KiemTraChiSo(k);
-            heSo[k] = value;
-        }
-    }
-
-    private void KiemTraChiSo(int k)
-    {
-        if (k < 0 || k > Bac)
-            throw new IndexOutOfRangeException("Chỉ số k phải từ 0 đến " + Bac + ".");
-    }
-
-    public static DaThuc operator +(DaThuc a, DaThuc b)
-    {
-        int bacMax = Math.Max(a.Bac, b.Bac);
-        DaThuc kq = new DaThuc(bacMax);
-        for (int k = 0; k <= bacMax; k++)
-        {
-            double ak = (k <= a.Bac) ? a[k] : 0;    
-            double bk = (k <= b.Bac) ? b[k] : 0;
-            kq[k] = ak + bk;
-        }
-        return kq;
-    }
-
-    public static DaThuc operator -(DaThuc a, DaThuc b)
-    {
-        int bacMax = Math.Max(a.Bac, b.Bac);
-        DaThuc kq = new DaThuc(bacMax);
-        for (int k = 0; k <= bacMax; k++)
-        {
-            double ak = (k <= a.Bac) ? a[k] : 0;
-            double bk = (k <= b.Bac) ? b[k] : 0;
-            kq[k] = ak - bk;
-        }
-        return kq;
-    }
-
-
-    public double TinhGiaTri(double b)
-    {
-        double kq = 0;
-        for (int k = Bac; k >= 0; k--)
-            kq = kq * b + heSo[k];
-        return kq;
+        X = DuongTron.NhapSo("Tọa độ x: ");
+        Y = DuongTron.NhapSo("Tọa độ y: ");
     }
 
     public override string ToString()
     {
-        StringBuilder sb = new StringBuilder();
-        for (int k = Bac; k >= 0; k--)
+        return "(" + X.ToString("0.##", CultureInfo.InvariantCulture) + "; "
+                   + Y.ToString("0.##", CultureInfo.InvariantCulture) + ")";
+    }
+}
+
+class DuongTron
+{
+    private const double EPS = 1e-9;   
+    private Diem tam;
+    private double banKinh;
+
+    public DuongTron()                       
+    {
+        tam = new Diem(0, 0);
+        banKinh = 1;
+    }
+
+    public DuongTron(Diem tam, double banKinh) 
+    {
+        Tam = tam;
+        BanKinh = banKinh;
+    }
+
+    public DuongTron(double x, double y, double banKinh)
+        : this(new Diem(x, y), banKinh)
+    { }
+
+    public Diem Tam
+    {
+        get { return tam; }
+        set
         {
-            double h = heSo[k];
-            if (h == 0)
-                continue;
-
-            if (sb.Length > 0)
-                sb.Append(h > 0 ? " + " : " - ");
-            else if (h < 0)
-                sb.Append("-");
-
-            double giaTriTuyetDoi = Math.Abs(h);
-            if (k == 0)
-            {
-                sb.Append(giaTriTuyetDoi.ToString(CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                if (giaTriTuyetDoi != 1)
-                    sb.Append(giaTriTuyetDoi.ToString(CultureInfo.InvariantCulture));
-                sb.Append("x");
-                if (k > 1)
-                    sb.Append("^" + k);
-            }
+            if (value == null)
+                throw new ArgumentNullException("Tam", "Tâm không được null.");
+            tam = new Diem(value.X, value.Y);  
         }
-        return sb.Length == 0 ? "0" : sb.ToString();
+    }
+
+    public double BanKinh
+    {
+        get { return banKinh; }
+        set
+        {
+            if (value <= 0)
+                throw new ArgumentException("Bán kính phải lớn hơn 0.");
+            banKinh = value;
+        }
+    }
+
+    public void Nhap()
+    {
+        double x = NhapSo("Tọa độ x của tâm: ");
+        double y = NhapSo("Tọa độ y của tâm: ");
+        double r;
+        while (true)
+        {
+            r = NhapSo("Bán kính (> 0): ");
+            if (r > 0) break;
+            Console.WriteLine("Bán kính phải lớn hơn 0, nhập lại.");
+        }
+        tam = new Diem(x, y);
+        banKinh = r;
+    }
+
+    public void Xuat()
+    {
+        Console.WriteLine(this);
+    }
+
+    public override string ToString()
+    {
+        return "Đường tròn tâm I" + tam + ", bán kính R = "
+             + banKinh.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    public static double NhapSo(string loiNhac)
+    {
+        while (true)
+        {
+            Console.Write(loiNhac);
+            string s = Console.ReadLine();
+            if (s != null) s = s.Trim().Replace(',', '.');
+
+            double so;
+            if (double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out so))
+                return so;
+            Console.WriteLine("Phải nhập một số, nhập lại.");
+        }
+    }
+
+    public double DienTich()
+    {
+        return Math.PI * banKinh * banKinh;
+    }
+
+    public double ChuVi()
+    {
+        return 2 * Math.PI * banKinh;
+    }
+
+    public ViTriHaiDuongTron ViTriTuongDoi(DuongTron kia)
+    {
+        double d = tam.KhoangCach(kia.tam);              // khoảng cách hai tâm
+        double tong = banKinh + kia.banKinh;
+        double hieu = Math.Abs(banKinh - kia.banKinh);
+
+        if (d < EPS && hieu < EPS) return ViTriHaiDuongTron.TrungNhau;
+        if (d > tong + EPS) return ViTriHaiDuongTron.NgoaiNhau;
+        if (Math.Abs(d - tong) <= EPS) return ViTriHaiDuongTron.TiepXucNgoai;
+        if (d < hieu - EPS) return ViTriHaiDuongTron.ChuaNhau;
+        if (Math.Abs(d - hieu) <= EPS) return ViTriHaiDuongTron.TiepXucTrong;
+        return ViTriHaiDuongTron.CatNhau;
+    }
+
+    public ViTriDiemDuongTron ViTriTuongDoi(Diem p)
+    {
+        double d = tam.KhoangCach(p);
+        if (Math.Abs(d - banKinh) <= EPS) return ViTriDiemDuongTron.TrenDuongTron;
+        if (d < banKinh) return ViTriDiemDuongTron.BenTrong;
+        return ViTriDiemDuongTron.BenNgoai;
     }
 }
 
 class Program
 {
+    static string MoTa(ViTriHaiDuongTron v)
+    {
+        switch (v)
+        {
+            case ViTriHaiDuongTron.TrungNhau: return "Hai đường tròn trùng nhau";
+            case ViTriHaiDuongTron.ChuaNhau: return "Một đường tròn chứa đường tròn kia (không có điểm chung)";
+            case ViTriHaiDuongTron.TiepXucTrong: return "Hai đường tròn tiếp xúc trong";
+            case ViTriHaiDuongTron.CatNhau: return "Hai đường tròn cắt nhau tại 2 điểm";
+            case ViTriHaiDuongTron.TiepXucNgoai: return "Hai đường tròn tiếp xúc ngoài";
+            default: return "Hai đường tròn ở ngoài nhau";
+        }
+    }
+
+    static string MoTa(ViTriDiemDuongTron v)
+    {
+        switch (v)
+        {
+            case ViTriDiemDuongTron.BenTrong: return "Điểm nằm bên trong đường tròn";
+            case ViTriDiemDuongTron.TrenDuongTron: return "Điểm nằm trên đường tròn";
+            default: return "Điểm nằm bên ngoài đường tròn";
+        }
+    }
+
     static void Main()
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-   
-        DaThuc p = new DaThuc(2);
-        p[0] = 1;
-        p[1] = 2;
-        p[2] = 3;
-
-    
-        DaThuc q = new DaThuc(3);
-        q[0] = 4;
-        q[1] = -1;
-        q[3] = 5;
-
-        Console.WriteLine("P(x) = " + p + "   (bậc " + p.Bac + ")");
-        Console.WriteLine("Q(x) = " + q + "   (bậc " + q.Bac + ")");
-
-        DaThuc tong = p + q;
-        DaThuc hieu = p - q;
-        Console.WriteLine("P + Q = " + tong + "   (bậc " + tong.Bac + ")");
-        Console.WriteLine("P - Q = " + hieu + "   (bậc " + hieu.Bac + ")");
+        Console.WriteLine("=== 1. Khởi tạo ===");
+        DuongTron c0 = new DuongTron();
+        DuongTron c1 = new DuongTron(new Diem(2, 3), 4);
+        DuongTron c2 = new DuongTron(-1, 0, 2.5);
+        c0.Xuat();
+        c1.Xuat();
+        c2.Xuat();
 
         Console.WriteLine();
-        Console.WriteLine("P(2)     = " + p.TinhGiaTri(2));
-        Console.WriteLine("Q(2)     = " + q.TinhGiaTri(2));
-        Console.WriteLine("(P+Q)(2) = " + tong.TinhGiaTri(2));
-        Console.WriteLine("(P-Q)(2) = " + hieu.TinhGiaTri(2));
+        Console.WriteLine("=== 2. Nhập đường tròn thứ nhất ===");
+        DuongTron a = new DuongTron();
+        a.Nhap();
+        Console.WriteLine("=== Nhập đường tròn thứ hai ===");
+        DuongTron b = new DuongTron();
+        b.Nhap();
 
         Console.WriteLine();
-        Console.WriteLine("Hệ số a1 của P = " + p[1]);      
+        Console.WriteLine("=== 3. Thông tin ===");
+        foreach (DuongTron c in new DuongTron[] { a, b })
+        {
+            c.Xuat();
+            Console.WriteLine("   Diện tích = " + c.DienTich().ToString("F2", CultureInfo.InvariantCulture));
+            Console.WriteLine("   Chu vi    = " + c.ChuVi().ToString("F2", CultureInfo.InvariantCulture));
+        }
 
-      
-        try
-        {
-            Console.WriteLine(p[5]);
-        }
-        catch (IndexOutOfRangeException ex)
-        {
-            Console.WriteLine("Lỗi: " + ex.Message);
-        }
+       
+        Console.WriteLine();
+        Console.WriteLine("=== 4. Vị trí tương đối của hai đường tròn ===");
+        Console.WriteLine(MoTa(a.ViTriTuongDoi(b)));
+
+        
+        Console.WriteLine();
+        Console.WriteLine("=== 5. Nhập một điểm, so với đường tròn thứ nhất ===");
+        Diem p = new Diem();
+        p.Nhap();
+        Console.WriteLine("Điểm " + p + ": " + MoTa(a.ViTriTuongDoi(p)));
 
         Console.ReadKey();
     }
